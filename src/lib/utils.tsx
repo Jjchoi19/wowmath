@@ -38,7 +38,7 @@ export function ProgressIcon({ status }: { status: ProgressStatus }) {
       );
     case ProgressStatus.WRONG_1:
       return (
-        <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm">
+        <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center text-white shadow-sm">
           <X className="w-3.5 h-3.5" />
         </div>
       );

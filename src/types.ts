@@ -1,6 +1,7 @@
 export interface Student {
   id: string;
   name: string;
+  pin: string;
   grade?: string;
   teacherId: string;
 }
@@ -53,4 +54,7 @@ export interface TestPaper {
   problems: Problem[];
   numPerPage: number;
   createdAt: any;
+  score?: number;
+  results?: boolean[];
+  gradedAt?: any;
 }
