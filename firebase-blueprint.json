@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "학생 정보",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "grade": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["name", "teacherId"]
+    },
+    "GradeContent": {
+      "title": "GradeContent",
+      "description": "학년별 단원 및 유형 정보 (주로 읽기 전용)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "grade": { "type": "string" },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "types": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Progress": {
+      "title": "Progress",
+      "description": "학생의 유형별 학습 진행도",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "typeId": { "type": "string" },
+        "status": { "type": "integer", "description": "진행 상태 코드" },
+        "streak": { "type": "integer", "description": "연속 정답/오답 횟수" },
+        "history": { "type": "array", "items": { "type": "boolean" } }
+      }
+    },
+    "TestPaper": {
+      "title": "TestPaper",
+      "description": "생성된 시험지",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "studentId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "typeId": { "type": "string" },
+              "question": { "type": "string" },
+              "answer": { "type": "string" },
+              "explanation": { "type": "string" }
+            }
+          }
+        },
+        "numPerPage": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "students": {
+      "schema": "Student",
+      "description": "학생 목록"
+    },
+    "progress": {
+      "schema": "Progress",
+      "description": "학생별 유형 진도"
+    },
+    "testPapers": {
+      "schema": "TestPaper",
+      "description": "시험지 목록"
+    }
+  }
+}

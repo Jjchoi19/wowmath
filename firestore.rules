@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Entity Validation Blueprints
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'teacherId']) 
+        && (data.keys().size() == 2 || (data.keys().size() == 3 && data.keys().hasAll(['grade'])))
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+        && data.teacherId is string && data.teacherId.size() <= 128;
+    }
+
+    function isValidProgress(data) {
+      return data.keys().hasAll(['studentId', 'teacherId', 'typeId', 'streak', 'status'])
+        && data.studentId is string && data.studentId.size() <= 128
+        && data.teacherId is string && data.teacherId.size() <= 128
+        && data.typeId is string && data.typeId.size() <= 128
+        && data.streak is int
+        && data.status is int;
+    }
+
+    function isValidTestPaper(data) {
+      return data.keys().hasAll(['id', 'title', 'studentId', 'teacherId', 'problems', 'numPerPage', 'createdAt'])
+        && data.id is string
+        && data.title is string && data.title.size() <= 200
+        && data.studentId is string
+        && data.teacherId is string
+        && data.problems is list
+        && data.numPerPage is int
+        && data.createdAt is string;
+    }
+
+    // 3. Collection Rules
+    
+    // --- Students ---
+    match /students/{studentId} {
+      allow create: if isVerified() && isValidStudent(incoming()) && incoming().teacherId == request.auth.uid;
+      allow get: if isVerified() && existing().teacherId == request.auth.uid;
+      allow list: if isVerified() && resource.data.teacherId == request.auth.uid;
+      allow update: if isVerified() && isValidStudent(incoming()) && incoming().teacherId == request.auth.uid && incoming().teacherId == existing().teacherId;
+      allow delete: if isVerified() && existing().teacherId == request.auth.uid;
+    }
+
+    // --- Progress ---
+    match /progress/{progressId} {
+      // Teachers can list and get progress for their students
+      allow list: if isVerified() && resource.data.teacherId == request.auth.uid;
+      allow get: if (isVerified() && (existing().teacherId == request.auth.uid)) || (true); // Allow public get for grading feedback
+      
+      // Anyone can create/update progress (for student grading) if they know the IDs and it's valid
+      allow create: if isValidProgress(incoming());
+      allow update: if isValidProgress(incoming()) && (incoming().teacherId == existing().teacherId) && (incoming().studentId == existing().studentId);
+    }
+
+    // --- Test Papers ---
+    match /testPapers/{paperId} {
+      // Teachers manage papers
+      allow create: if isVerified() && isValidTestPaper(incoming()) && incoming().teacherId == request.auth.uid;
+      allow list: if isVerified() && resource.data.teacherId == request.auth.uid;
+      
+      // Students can 'get' a specific paper by ID for grading, no auth required
+      allow get: if true; 
+      
+      allow delete: if isVerified() && existing().teacherId == request.auth.uid;
+    }
+  }
+}
